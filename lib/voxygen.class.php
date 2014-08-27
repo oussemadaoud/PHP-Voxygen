@@ -25,7 +25,7 @@ class Voxygen {
      * @var array
      * @access public
      */
-    public $voices = array('Damien','Eva','Agnes','Philippe','Loic','Bicool','Chut','DarkVadoor','Electra','JeanJean','John','Luc','Matteo','Melodine','Papi','Ramboo','Robot','Sidoo','Sorciere','Yeti','Zozo','Marta','Elizabeth','Bibi','Paul','Bronwen','Adel');
+    public $voices = array('Damien','Eva','Agnes','Philippe','Loic','Bicool','Chut','DarkVadoor','Electra','JeanJean','John','Luc','Matteo','Melodine','Papi','Ramboo','Robot','Sidoo','Sorciere','Yeti','Zozo','Marta','Elizabeth','Paul','Bronwen','Adel','Sonia','Marta');
 
     /**
      * Class initialisator
@@ -67,11 +67,10 @@ class Voxygen {
         $md5 = md5($voice.$text);
         $file = $this->cacheFolder.'/'.$md5.'.mp3';
         if (!file_exists($file)) {
-            $post = 'method=get&voice='.$voice.'&text='.urlencode($text);
-            $voxygenJSON = $this->curlJob($post);
-            $voxygenParsedData = json_decode($voxygenJSON,true);
-            if ($voxygenParsedData !== null && isset($voxygenParsedData['signal'])) {
-                file_put_contents($file,file_get_contents($voxygenParsedData['signal']));
+            $post = 'method=redirect&voice='.$voice.'&text='.urlencode($text).'&ts='.time();
+            $voxygenResult = $this->curlJob($post);
+            if ($voxygenResult !== null) {
+                file_put_contents($file,$voxygenResult);
             } else {
                 throw new Exception('Voxygen has probably changed its APIs. We can\'t get a correct URL.');
             }
@@ -121,8 +120,9 @@ class Voxygen {
         curl_setopt($curlHandler, CURLOPT_POST, true);
         curl_setopt($curlHandler, CURLOPT_POSTFIELDS, $post);
         curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curlHandler, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($curlHandler, CURLOPT_REFERER, 'http://voxygen.fr/fr');
-        curl_setopt($curlHandler, CURLOPT_USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:23.0) Gecko/20100101 Firefox/23.0');
+        curl_setopt($curlHandler, CURLOPT_USERAGENT, 'iTunes/9.0.3 (Macintosh; U; Intel Mac OS X 10_6_2; en-ca)');
         curl_setopt($curlHandler, CURLOPT_COOKIE, 'has_js=1');
         curl_setopt($curlHandler, CURLOPT_HTTPHEADER, array(
             'Content-type: application/x-www-form-urlencoded',

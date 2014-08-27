@@ -114,6 +114,8 @@ if ((isset($_POST['listen']) OR isset($_POST['download'])) AND !empty($_POST['me
 				</div>
 			</div>
 		</form>
+
+		<p>L'utilisation de PHP Voxygen doit se faire uniquement dans le but d'évaluer les services proposés par <a href="http://voxygen.fr">Voxygen SAS</a>, conformément aux <a href="http://voxygen.fr/fr/content/mentions-legales">mentions légales</a> du démonstrateur de Voxygen. Pour une utilisation professionnelle, veuillez consulter les <a href="http://voxygen.fr/fr/content/cloud-saas">services SaaS de Voxygen SAS</a>, l'<a href="http://voxygen.fr/fr/content/server-mrcptcp">Express Speech Server</a>, ainsi que l'<a href="http://voxygen.fr/fr/content/studio-expresspro">Express Speech Studio</a>.</p>
 	</div>
 </body>
 </html>
