@@ -25,7 +25,7 @@ class Voxygen {
      * @var array
      * @access public
      */
-    public $voices = array('Damien','Eva','Agnes','Philippe','Loic','Bicool','Chut','DarkVadoor','Electra','JeanJean','John','Luc','Matteo','Melodine','Papi','Ramboo','Robot','Sidoo','Sorciere','Yeti','Zozo','Marta','Elizabeth','Paul','Bronwen','Adel','Sonia','Marta');
+    public $voices = array();
 
     /**
      * Class initialisator
@@ -41,6 +41,7 @@ class Voxygen {
         if (is_string($cacheFolder)) {
             $this->cacheFolder = $cacheFolder;
         }
+		$this->getVoices();
     }
 
     /**
@@ -124,6 +125,8 @@ class Voxygen {
         curl_setopt($curlHandler, CURLOPT_REFERER, 'http://voxygen.fr/fr');
         curl_setopt($curlHandler, CURLOPT_USERAGENT, 'iTunes/9.0.3 (Macintosh; U; Intel Mac OS X 10_6_2; en-ca)');
         curl_setopt($curlHandler, CURLOPT_COOKIE, 'has_js=1');
+		curl_setopt($curlHandler, CURLOPT_FOLLOWLOCATION, true);
+		#curl_setopt($curlHandler, CURLOPT_VERBOSE, true);
         curl_setopt($curlHandler, CURLOPT_HTTPHEADER, array(
             'Content-type: application/x-www-form-urlencoded',
             'X-Requested-With:  XMLHttpRequest',
@@ -133,6 +136,45 @@ class Voxygen {
         curl_close($curlHandler);
         return $output;
     }
-}
 
+	private function getVoices() {
+
+		$curlHandler = curl_init("http://voxygen.fr/voices.json");
+        curl_setopt($curlHandler, CURLOPT_REFERER, 'http://voxygen.fr/fr');
+        curl_setopt($curlHandler, CURLOPT_USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:23.0) Gecko/20100101 Firefox/23.0');
+        curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, true);
+        $output = curl_exec($curlHandler);
+        curl_close($curlHandler);
+		$voices = json_decode( $output, true);
+		if( $voices === null) {
+			throw new Exception('Voxygen voices is not a valid JSON result.');
+		}
+		
+		if( isset( $voices['groups'])) {
+			if( is_array( $voices['groups'])) {
+				foreach( $voices['groups'] as $lang) {
+					$langName = "undefined";
+					if( isset( $lang['name'])) {
+						$langName = $lang['name'];
+					}
+					if( isset( $lang['voices'])) {
+						if( is_array( $lang['voices'])) {
+							foreach( $lang['voices'] as $user) {
+								if( isset( $user['name'])) {
+									$username = $user['name'];
+									$this->voices[$username] = $langName;
+								}
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if( !sizeof( array_keys( $this->voices))) {
+			throw new Exception( 'Can\'t get voices on Voxygen site.');
+		}
+		ksort( $this->voices);
+	}
+}
 ?>
