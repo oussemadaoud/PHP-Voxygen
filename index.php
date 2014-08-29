@@ -4,8 +4,12 @@
 
 include 'lib/voxygen.class.php';
 
-$voxygen = new Voxygen(true);
 $errorMessage = '';
+try {
+	$voxygen = new Voxygen(true);
+} catch( Exception $e) {
+	$errorMessage .= $e.' ';
+}
 
 if ((isset($_POST['listen']) OR isset($_POST['download'])) AND !empty($_POST['message']) AND !empty($_POST['voice'])) {
 	try {
@@ -76,13 +80,15 @@ if ((isset($_POST['listen']) OR isset($_POST['download'])) AND !empty($_POST['me
 					<select name="voice">
 						<?php
 							$voice = isset($_POST['voice']) ? $_POST['voice'] : null;
-    						foreach ($voxygen->voices as $voice) {
-    						    if (isset($_POST['voice']) AND $voice == $_POST['voice']) {
-    						        echo '<option selected>'.$voice.'</option>';
-    						    } else {
-    						        echo '<option>'.$voice.'</option>';
-    						    }
-    						}
+							if( isset( $voxygen) && is_array( $voxygen->voices)) {
+	    						foreach ($voxygen->voices as $voice => $lang) {
+    							    if (isset($_POST['voice']) AND $voice == $_POST['voice']) {
+    							        echo '<option value="'.$voice.'" selected=selected>'.$voice.' ('.$lang.')</option>';
+    							    } else {
+    							        echo '<option value="'.$voice.'">'.$voice.' ('.$lang.')</option>';
+    							    }
+    							}
+							}
 						?>
 					</select>
 				</div>
