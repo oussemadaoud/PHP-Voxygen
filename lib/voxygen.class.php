@@ -53,7 +53,7 @@ class Voxygen {
      * @return string Path to the rendered file
      */
     public function voiceSynthesis($voice,$text) {
-        if (!in_array($voice,$this->voices)) {
+        if (!isset( $this->voices[$voice])) {
             throw new Exception('This voice you\'ve selected is currently not implemented.');
         }
 
@@ -71,7 +71,9 @@ class Voxygen {
             $post = 'method=redirect&voice='.$voice.'&text='.urlencode($text).'&ts='.time();
             $voxygenResult = $this->curlJob($post);
             if ($voxygenResult !== null) {
-                file_put_contents($file,$voxygenResult);
+				if( !file_put_contents($file,$voxygenResult)) {
+					throw new Exception( 'Can\'t create cache file \''.$file.'\'');
+				}
             } else {
                 throw new Exception('Voxygen has probably changed its APIs. We can\'t get a correct URL.');
             }
