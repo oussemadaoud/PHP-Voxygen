@@ -41,7 +41,7 @@ class Voxygen {
         if (is_string($cacheFolder)) {
             $this->cacheFolder = $cacheFolder;
         }
-		$this->getVoices();
+        $this->getVoices();
     }
 
     /**
@@ -68,12 +68,16 @@ class Voxygen {
         $md5 = md5($voice.$text);
         $file = $this->cacheFolder.'/'.$md5.'.mp3';
         if (!file_exists($file)) {
-            $post = 'method=redirect&voice='.$voice.'&text='.urlencode($text).'&ts='.time();
-            $voxygenResult = $this->curlJob($post);
+            $params = array('method'    => 'redirect',
+                            'voice'     => $voice,
+                            'text'      => $text,
+                            'ts'        => time(),
+                            );
+            $voxygenResult = $this->curlJob($params);
             if ($voxygenResult !== null) {
-				if( !file_put_contents($file,$voxygenResult)) {
-					throw new Exception( 'Can\'t create cache file \''.$file.'\'');
-				}
+                if(file_put_contents($file,$voxygenResult) === False) {
+                    throw new Exception( 'Can\'t create cache file \''.$file.'\'');
+                }
             } else {
                 throw new Exception('Voxygen has probably changed its APIs. We can\'t get a correct URL.');
             }
@@ -113,70 +117,79 @@ class Voxygen {
     /**
      * HTTP request function
      * 
-     * @param string $post Content of the request
+     * @param string $params Content of the request
      * @return string Output of the request
      * @access private
      */
-    private function curlJob($post) {
-        $curlHandler = curl_init("http://voxygen.fr/sites/all/modules/voxygen_voices/assets/proxy/index.php");
+    private function curlJob($params, $type='GET') {
+        $url = "https://www.voxygen.fr/sites/all/modules/voxygen_voices/assets/proxy/index.php";
+        if ($type == 'GET'){
+            $url .= "?".http_build_query($params);
+        }
+        $curlHandler = curl_init($url);
         curl_setopt($curlHandler, CURLOPT_HEADER, false);
-        curl_setopt($curlHandler, CURLOPT_POST, true);
-        curl_setopt($curlHandler, CURLOPT_POSTFIELDS, $post);
+        if ($type == 'POST'){
+            curl_setopt($curlHandler, CURLOPT_POST, true);
+            curl_setopt($curlHandler, CURLOPT_POSTFIELDS, $post);
+            curl_setopt($curlHandler, CURLOPT_HTTPHEADER, array(
+                'Content-type: application/x-www-form-urlencoded',
+                'X-Requested-With:  XMLHttpRequest',
+                'Host: voxygen.fr'
+            ));
+        }
         curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($curlHandler, CURLOPT_FOLLOWLOCATION, true);
         curl_setopt($curlHandler, CURLOPT_REFERER, 'http://voxygen.fr/fr');
         curl_setopt($curlHandler, CURLOPT_USERAGENT, 'iTunes/9.0.3 (Macintosh; U; Intel Mac OS X 10_6_2; en-ca)');
         curl_setopt($curlHandler, CURLOPT_COOKIE, 'has_js=1');
-		curl_setopt($curlHandler, CURLOPT_FOLLOWLOCATION, true);
-		#curl_setopt($curlHandler, CURLOPT_VERBOSE, true);
-        curl_setopt($curlHandler, CURLOPT_HTTPHEADER, array(
-            'Content-type: application/x-www-form-urlencoded',
-            'X-Requested-With:  XMLHttpRequest',
-            'Host: voxygen.fr'
-        ));
+        //curl_setopt($curlHandler, CURLOPT_VERBOSE, true);
+        
         $output = curl_exec($curlHandler);
         curl_close($curlHandler);
         return $output;
     }
 
-	private function getVoices() {
+    private function getVoices() {
 
-		$curlHandler = curl_init("http://voxygen.fr/voices.json");
+        $curlHandler = curl_init("https://voxygen.fr/voices.json");
         curl_setopt($curlHandler, CURLOPT_REFERER, 'http://voxygen.fr/fr');
         curl_setopt($curlHandler, CURLOPT_USERAGENT, 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.8; rv:23.0) Gecko/20100101 Firefox/23.0');
         curl_setopt($curlHandler, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($curlHandler, CURLOPT_FOLLOWLOCATION, true);
         $output = curl_exec($curlHandler);
         curl_close($curlHandler);
-		$voices = json_decode( $output, true);
-		if( $voices === null) {
-			throw new Exception('Voxygen voices is not a valid JSON result.');
-		}
-		
-		if( isset( $voices['groups'])) {
-			if( is_array( $voices['groups'])) {
-				foreach( $voices['groups'] as $lang) {
-					$langName = "undefined";
-					if( isset( $lang['name'])) {
-						$langName = $lang['name'];
-					}
-					if( isset( $lang['voices'])) {
-						if( is_array( $lang['voices'])) {
-							foreach( $lang['voices'] as $user) {
-								if( isset( $user['name'])) {
-									$username = $user['name'];
-									$this->voices[$username] = $langName;
-								}
-							}
-						}
-					}
-				}
-			}
-		}
+        
+        $voices = json_decode( $output, true);
+        
+        if( $voices === null) {
+            throw new Exception('Voxygen voices is not a valid JSON result.');
+        }
+        
+        if( isset( $voices['groups'])) {
+            if( is_array( $voices['groups'])) {
+                foreach( $voices['groups'] as $lang) {
+                    $langName = "undefined";
+                    if( isset( $lang['name'])) {
+                        $langName = $lang['name'];
+                    }
+                    if( isset( $lang['voices'])) {
+                        if( is_array( $lang['voices'])) {
+                            foreach( $lang['voices'] as $user) {
+                                if( isset( $user['name'])) {
+                                    $username = $user['name'];
+                                    $this->voices[$username] = $langName;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
 
-		if( !sizeof( array_keys( $this->voices))) {
-			throw new Exception( 'Can\'t get voices on Voxygen site.');
-		}
-		ksort( $this->voices);
-	}
+        if( !sizeof( array_keys( $this->voices))) {
+            throw new Exception( 'Can\'t get voices on Voxygen site.');
+        }
+        ksort( $this->voices);
+    }
 }
 ?>
