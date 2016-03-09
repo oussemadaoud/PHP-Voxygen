@@ -1,0 +1,6 @@
+voxygen:
+  build: .
+  ports:
+    - '80'
+  volumes:
+    - "./:/app"
